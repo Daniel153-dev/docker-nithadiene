@@ -1,0 +1,96 @@
+Mise à jour de l'historique des commandes avec le déploiement Odoo
+
+## Déploiement Odoo 18 avec Docker Compose
+
+## 10. Création du docker-compose.yml
+cat <<'YML' > docker-compose.yml
+version: '3.8'
+services:
+  postgresql:
+    image: postgres:15
+    container_name: odoo-postgres
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo123
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - odoo-network
+    restart: unless-stopped
+
+  odoo:
+    image: odoo:18
+    container_name: odoo-server
+    depends_on:
+      - postgresql
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - odoo_config:/etc/odoo
+    environment:
+      - HOST=postgresql
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo123
+    networks:
+      - odoo-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: odoo-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@odoo.local
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - odoo-network
+    depends_on:
+      - postgresql
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  odoo_data:
+    driver: local
+  odoo_config:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  odoo-network:
+    driver: bridge
+    name: odoo-network
+YML
+
+## 11. Démarrage des services
+docker compose up -d
+
+## 12. Vérification des conteneurs
+docker compose ps
+
+## 13. Vérification PostgreSQL
+docker compose exec postgresql pg_isready -U odoo
+
+## 14. Test Odoo
+curl http://localhost:8069
+
+## 15. Accès interfaces
+- Odoo: http://localhost:8069
+- PgAdmin: http://localhost:5050
+- PostgreSQL: localhost:5432
+
+## 16. Arrêt des services
+docker compose down
+
+## 17. Orchestration Docker Swarm (optionnel)
+docker swarm init
+docker stack deploy -c docker-compose.yml odoo-stack

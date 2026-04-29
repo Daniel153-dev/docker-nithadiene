@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:15
+    container_name: odoo-postgres
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo123
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - odoo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  odoo:
+    image: odoo:18
+    container_name: odoo-server
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - odoo_config:/etc/odoo
+    environment:
+      - HOST=postgresql
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo123
+    networks:
+      - odoo-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: odoo-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@odoo.local
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - odoo-network
+    depends_on:
+      - postgresql
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  odoo_data:
+    driver: local
+  odoo_config:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  odoo-network:
+    driver: bridge
+    name: odoo-network
