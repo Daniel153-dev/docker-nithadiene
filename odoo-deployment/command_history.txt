@@ -126,3 +126,19 @@ docker compose exec postgresql pg_isready -U odoo
 - PgAdmin ne démarrait pas: Email avec domaine .local invalide
 - Solution: Utiliser domaine valide (example.com)
 - Healthcheck PostgreSQL ajouté pour dépendance Odoo
+
+## 25. Tests de connexion PgAdmin réussis
+
+curl -X POST "http://localhost:5050/authenticate/login" \
+  -d "email=admin@example.com&password=admin123" \
+  -c /tmp/cookies.txt -L
+# Résultat: 200 OK - Page PgAdmin chargée avec succès
+
+## Identifiants PgAdmin :
+- Email: admin@example.com
+- Mot de passe: admin123
+
+## Statut final des services (2026-04-30):
+- ✅ Odoo 18: http://localhost:8069 - REDIRECT /odoo
+- ✅ PgAdmin 4: http://localhost:5050 - LOGIN OK
+- ✅ PostgreSQL 15: localhost:5432 - HEALTHY
