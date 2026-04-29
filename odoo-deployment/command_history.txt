@@ -94,3 +94,35 @@ docker compose down
 ## 17. Orchestration Docker Swarm (optionnel)
 docker swarm init
 docker stack deploy -c docker-compose.yml odoo-stack
+
+## Corrections et Tests
+
+## 18. Correction PgAdmin - Email invalide
+## Problème: admin@odoo.local rejeté (domaine réservé)
+## Solution: Remplacement par admin@example.com
+
+## 19. Redémarrage complet
+# docker compose down
+# docker compose up -d
+
+## 20. Vérification PgAdmin
+curl http://localhost:5050
+# Résultat: Page de login PgAdmin accessible
+
+## 21. Vérification Odoo
+curl http://localhost:8069
+# Résultat: Redirection vers /odoo
+
+## 22. Vérification PostgreSQL
+docker compose exec postgresql pg_isready -U odoo
+# Résultat: accepting connections
+
+## 23. Accès actuels
+- Odoo: http://localhost:8069 (OK)
+- PgAdmin: http://localhost:5050 (OK)
+- PostgreSQL: localhost:5432 (OK)
+
+## 24. Problèmes rencontrés et solutions
+- PgAdmin ne démarrait pas: Email avec domaine .local invalide
+- Solution: Utiliser domaine valide (example.com)
+- Healthcheck PostgreSQL ajouté pour dépendance Odoo
