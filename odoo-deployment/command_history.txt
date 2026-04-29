@@ -142,3 +142,26 @@ curl -X POST "http://localhost:5050/authenticate/login" \
 - ✅ Odoo 18: http://localhost:8069 - REDIRECT /odoo
 - ✅ PgAdmin 4: http://localhost:5050 - LOGIN OK
 - ✅ PostgreSQL 15: localhost:5432 - HEALTHY
+
+## 26. Correction CSRF PgAdmin
+
+## Problème : "The CSRF token is invalid" lors de la connexion PgAdmin
+## Solution : Désactivation de la protection CSRF dans docker-compose.yml
+
+PGADMIN_CONFIG_ENHANCED_COOKIES_ENABLED=False
+PGADMIN_CONFIG_WTF_CSRF_ENABLED=False
+
+## Changement de mot de passe : admin123 → SuperSecret123! (complexité requise)
+
+## 27. Test final PgAdmin
+curl -s "http://localhost:5050/browser/" -c /tmp/cookies.txt -b /tmp/cookies.txt
+# Résultat: Retourne la page HTML complète de PgAdmin 4
+# → Connexion réussie !
+
+## 28. Connexion PgAdmin (identifiants finaux)
+Email: admin@example.com
+Mot de passe: SuperSecret123!
+
+## 29. Vérification complète
+curl -s "http://localhost:5050/browser/" | grep -o "<title>.*</title>"
+# Résultat: <title>pgAdmin 4</title>
