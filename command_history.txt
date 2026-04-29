@@ -1,0 +1,35 @@
+# Commandes exécutées pour le TP Docker
+
+## Étape 1 : Création des fichiers de l'application
+- Dockerfile : Configuration de l'environnement Python 3.9 avec Flask
+- app.py : Application web Flask avec route / retournant le message
+- requirements.txt : Dépendance Flask
+
+## Étape 2 : Construction de l'image Docker
+Commande : docker build -t nithadiene-flask-app /home/nithadiene/Bureau/docker-tp
+Résultat : Image créée avec succès (ID: 0fb92b9ddf21)
+
+## Étape 3 : Tag pour Docker Hub
+Commande : docker tag nithadiene-flask-app:latest nithadiene/nithadiene-flask-app:latest
+
+## Étape 4 : Authentification Docker Hub
+Commande : docker login -u nithadiene
+Entrer le token personnel Docker Hub (dckr_pat_...)
+
+## Étape 5 : Publication sur Docker Hub
+Commande : docker push nithadiene/nithadiene-flask-app:latest
+Résultat : Image publiée avec succès sur Docker Hub
+
+## Étape 6 : Exécution du conteneur
+Commande : docker run -d -p 5000:5000 nithadiene/nithadiene-flask-app:latest
+ID conteneur : e9ae9df6f667
+
+## Étape 7 : Vérification
+Commande : curl http://localhost:5000
+Résultat : Bonjour à tous , Ceci est une simple application conteneuriser avec Docker par nithadiene!
+
+## Commandes Docker utiles
+docker images - Lister les images
+docker ps - Lister les conteneurs en cours  
+docker logs <id> - Voir les logs
+docker stop <id> - Arrêter un conteneur
