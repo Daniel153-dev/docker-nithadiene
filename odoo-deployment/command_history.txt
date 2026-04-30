@@ -352,3 +352,37 @@ networks:
 ## 6. Redémarrage test :
 docker compose restart
 Tous les services redémarrent automatiquement dans le bon ordre ✅
+
+## ÉTAPE 3 (30/04/2026 01:40) : Configuration redémarrage automatique et dépendances
+
+## Commandes tapées pour cette étape :
+
+# 1. Arrêt et nettoyage précédent
+cd /home/nithadiene/Bureau/docker-tp/odoo-deployment
+docker compose stop
+docker compose rm -sf
+
+# 2. Modification docker-compose.yml (ajout restart: always et depends_on)
+# Édition du fichier via sed/manuel :
+#   - Ajout de "restart: always" à tous les services
+#   - Ajout de "depends_on: [odoo-postgres]" pour odoo-server et odoo-pgadmin
+
+# 3. Démarrage avec nouvelle configuration
+docker compose up -d
+
+# 4. Vérifications
+docker compose ps
+curl -s -o /dev/null -w "HTTP Status Odoo: %{http_code}\n" http://localhost:8069
+curl -s -o /dev/null -w "HTTP Status PgAdmin: %{http_code}\n" http://localhost:5050/login
+docker exec odoo-deployment-odoo-postgres-1 pg_isready -U odoo
+
+# 5. Test redémarrage automatique
+docker compose restart
+docker compose ps
+
+## Résultat :
+# - Odoo: HTTP Status: 303 ✅
+# - PgAdmin: HTTP Status: 302 ✅
+# - PostgreSQL: accepting connections ✅
+# - restart: always actif sur tous les services ✅
+# - depends_on configuré (PostgreSQL démarre en premier) ✅
