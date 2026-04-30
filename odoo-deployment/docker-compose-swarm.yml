@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   odoo-postgres:
-    container_name: odoo-postgres
     hostname: odoo-postgres
     image: postgres:15
     environment:
@@ -13,10 +12,18 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - odoo-network
+    ports:
+      - published: 5432
+        target: 5432
+        protocol: tcp
+        mode: host
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U odoo"]
       interval: 10s
@@ -24,35 +31,36 @@ services:
       retries: 5
 
   odoo-server:
-    container_name: odoo-server
     hostname: odoo-server
     image: odoo:18
-    depends_on:
-      - odoo-postgres
-    ports:
-      - target: 8069
-        published: 8069
-        protocol: tcp
-      - target: 8072
-        published: 8072
-        protocol: tcp
-    volumes:
-      - odoo_data:/var/lib/odoo
-      - odoo_config:/etc/odoo
     environment:
       - HOST=odoo-postgres
       - PORT=5432
       - USER=odoo
       - PASSWORD=odoo123
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - odoo_config:/etc/odoo
     networks:
       - odoo-network
+    ports:
+      - published: 8069
+        target: 8069
+        protocol: tcp
+      - published: 8072
+        target: 8072
+        protocol: tcp
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    depends_on:
+      - odoo-postgres
 
   odoo-pgadmin:
-    container_name: odoo-pgadmin
     hostname: odoo-pgadmin
     image: dpage/pgadmin4
     environment:
@@ -61,34 +69,37 @@ services:
       - PGADMIN_CONFIG_SERVER_MODE=False
       - PGADMIN_CONFIG_ENHANCED_COOKIES_ENABLED=False
       - PGADMIN_CONFIG_WTF_CSRF_ENABLED=False
-    ports:
-      - target: 80
-        published: 5050
-        protocol: tcp
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
       - odoo-network
-    depends_on:
-      - odoo-postgres
+    ports:
+      - published: 5050
+        target: 80
+        protocol: tcp
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    depends_on:
+      - odoo-postgres
 
 volumes:
   postgres_data:
     driver: local
-    name: postgres_data
+    name: odoo_postgres_data
   odoo_data:
     driver: local
-    name: odoo_data
+    name: odoo_app_data
   odoo_config:
     driver: local
-    name: odoo_config
+    name: odoo_config_data
   pgadmin_data:
     driver: local
-    name: pgadmin_data
+    name: pgadmin_config_data
 
 networks:
   odoo-network:

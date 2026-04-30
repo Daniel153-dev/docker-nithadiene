@@ -198,3 +198,44 @@ docker exec <container> pg_isready -U odoo
 - Réseau overlay : odoo-network (attachable)
 - Driver : overlay
 - Tous les services communiquent correctement
+
+## 35. Correction Docker Swarm - Suppression container_name
+
+## Problème : `container_name` incompatible avec Docker Swarm
+## Solution : Suppression de container_name, utilisation du hostname uniquement
+
+## Spécifications respectées pour chaque service :
+### odoo-postgres :
+- hostname: odoo-postgres
+- ports: 5432 (mode host)
+- image: postgres:15
+- networks: odoo-network (overlay)
+- volumes: postgres_data (/var/lib/postgresql/data)
+- deploy: replicas=1, restart_policy, healthcheck
+
+### odoo-server :
+- hostname: odoo-server
+- ports: 8069, 8072
+- image: odoo:18
+- networks: odoo-network
+- volumes: odoo_data, odoo_config
+- deploy: replicas=1, restart_policy
+- depends_on: odoo-postgres
+
+### odoo-pgadmin :
+- hostname: odoo-pgadmin
+- ports: 5050 → 80
+- image: dpage/pgadmin4
+- networks: odoo-network
+- volumes: pgadmin_data
+- deploy: replicas=1, restart_policy
+- depends_on: odoo-postgres
+
+## 36. Déploiement Swarm final :
+docker stack rm odoo-stack
+docker stack deploy -c docker-compose-swarm.yml odoo-stack
+
+## Résultat : Tous services Running ✅
+- PostgreSQL : *:5432->5432/tcp
+- Odoo : Running
+- PgAdmin : Running
