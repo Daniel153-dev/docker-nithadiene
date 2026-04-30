@@ -165,3 +165,36 @@ Mot de passe: SuperSecret123!
 ## 29. Vérification complète
 curl -s "http://localhost:5050/browser/" | grep -o "<title>.*</title>"
 # Résultat: <title>pgAdmin 4</title>
+
+## 31. Déploiement Docker Swarm final
+
+## Redémarrage propre de la stack :
+docker stack rm odoo-stack
+sleep 5
+docker stack deploy -c docker-compose-swarm.yml odoo-stack
+
+## Résultat : Tous les services en état "Running" ✅
+
+## 32. Vérifications finales (2026-04-30)
+
+### Odoo 18 :
+curl -s -o /dev/null -w "HTTP Status: %{http_code}" http://localhost:8069
+# Résultat: HTTP Status: 303 (Opérationnel)
+
+### PgAdmin 4 :
+curl -s -o /dev/null -w "HTTP Status: %{http_code}" http://localhost:5050/login
+# Résultat: HTTP Status: 302 (Page login accessible)
+
+### PostgreSQL :
+docker exec <container> pg_isready -U odoo
+# Résultat: /var/run/postgresql:5432 - accepting connections
+
+## 33. Accès finaux confirmés :
+- Odoo: http://localhost:8069 ✅
+- PgAdmin: http://localhost:5050 (admin@example.com / SuperSecret123!) ✅
+- PostgreSQL: localhost:5432 ✅
+
+## 34. Réseau Docker Swarm :
+- Réseau overlay : odoo-network (attachable)
+- Driver : overlay
+- Tous les services communiquent correctement
