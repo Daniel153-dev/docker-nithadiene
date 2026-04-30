@@ -239,3 +239,116 @@ docker stack deploy -c docker-compose-swarm.yml odoo-stack
 - PostgreSQL : *:5432->5432/tcp
 - Odoo : Running
 - PgAdmin : Running
+
+## 37. Étape 3 : Configuration redémarrage automatique et dépendances
+
+## Changements appliqués :
+### 1. Redémarrage automatique :
+- Ajout de `restart: always` pour TOUS les services
+  - odoo-postgres: restart: always
+  - odoo-server: restart: always  
+  - odoo-pgadmin: restart: always
+
+### 2. Gestion des dépendances :
+- Ajout de `depends_on` pour assurer le bon ordre de lancement
+  - odoo-server → depends_on: odoo-postgres
+  - odoo-pgadmin → depends_on: odoo-postgres
+
+### 3. PostgreSQL déjà en cours :
+- Le port 5432 était déjà utilisé par PostgreSQL système
+- Modification : Utilisation du port 5433 en externe → 5432 interne
+  - "5433:5432" au lieu de "5432:5432"
+
+## 4. Fichier docker-compose.yml final avec restart et depends_on :
+
+```yaml
+version: '3'
+
+services:
+  odoo-postgres:
+    hostname: odoo-postgres
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo123
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - odoo-network
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  odoo-server:
+    hostname: odoo-server
+    image: odoo:18
+    restart: always
+    depends_on:
+      - odoo-postgres
+    environment:
+      - HOST=odoo-postgres
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo123
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - odoo_config:/etc/odoo
+    networks:
+      - odoo-network
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+
+  odoo-pgadmin:
+    hostname: odoo-pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    depends_on:
+      - odoo-postgres
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret123!
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_ENHANCED_COOKIES_ENABLED=False
+      - PGADMIN_CONFIG_WTF_CSRF_ENABLED=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - odoo-network
+    ports:
+      - "5050:80"
+
+volumes:
+  postgres_data:
+    driver: local
+    name: odoo_postgres_data
+  odoo_data:
+    driver: local
+    name: odoo_app_data
+  odoo_config:
+    driver: local
+    name: odoo_config_data
+  pgadmin_data:
+    driver: local
+    name: pgadmin_config_data
+
+networks:
+  odoo-network:
+    driver: bridge
+    name: odoo-network
+```
+
+## 5. Vérification finale :
+- Odoo: curl http://localhost:8069 → HTTP Status: 303 ✅
+- PgAdmin: curl http://localhost:5050/login → HTTP Status: 302 ✅  
+- PostgreSQL: pg_isready -U odoo → accepting connections ✅
+
+## 6. Redémarrage test :
+docker compose restart
+Tous les services redémarrent automatiquement dans le bon ordre ✅

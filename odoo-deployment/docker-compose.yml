@@ -1,8 +1,10 @@
-version: '3.8'
+version: '3'
+
 services:
-  postgresql:
+  odoo-postgres:
+    hostname: odoo-postgres
     image: postgres:15
-    container_name: odoo-postgres
+    restart: always
     environment:
       - POSTGRES_USER=odoo
       - POSTGRES_PASSWORD=odoo123
@@ -11,62 +13,66 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - odoo-network
+    ports:
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U odoo"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
-  odoo:
+  odoo-server:
+    hostname: odoo-server
     image: odoo:18
-    container_name: odoo-server
+    restart: always
     depends_on:
-      postgresql:
-        condition: service_healthy
-    ports:
-      - "8069:8069"
-      - "8072:8072"
-    volumes:
-      - odoo_data:/var/lib/odoo
-      - odoo_config:/etc/odoo
+      - odoo-postgres
     environment:
-      - HOST=postgresql
+      - HOST=odoo-postgres
       - PORT=5432
       - USER=odoo
       - PASSWORD=odoo123
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - odoo_config:/etc/odoo
     networks:
       - odoo-network
-    restart: unless-stopped
+    ports:
+      - "8069:8069"
+      - "8072:8072"
 
-  pgadmin:
+  odoo-pgadmin:
+    hostname: odoo-pgadmin
     image: dpage/pgadmin4
-    container_name: odoo-pgadmin
+    restart: always
+    depends_on:
+      - odoo-postgres
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@example.com
       - PGADMIN_DEFAULT_PASSWORD=SuperSecret123!
       - PGADMIN_CONFIG_SERVER_MODE=False
       - PGADMIN_CONFIG_ENHANCED_COOKIES_ENABLED=False
       - PGADMIN_CONFIG_WTF_CSRF_ENABLED=False
-    ports:
-      - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
       - odoo-network
-    depends_on:
-      - postgresql
-    restart: unless-stopped
+    ports:
+      - "5050:80"
 
 volumes:
   postgres_data:
     driver: local
+    name: odoo_postgres_data
   odoo_data:
     driver: local
+    name: odoo_app_data
   odoo_config:
     driver: local
+    name: odoo_config_data
   pgadmin_data:
     driver: local
+    name: pgadmin_config_data
 
 networks:
   odoo-network:
